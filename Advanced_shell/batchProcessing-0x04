@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Fetch Pokémon data in parallel with proper process management
+
+POKEMONS=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
+OUTPUT_DIR="pokemon_data"
+mkdir -p "$OUTPUT_DIR"
+
+fetch_pokemon() {
+    local name=$1
+    local url="https://pokeapi.co/api/v2/pokemon/${name}"
+    local outfile="${OUTPUT_DIR}/${name}.json"
+
+    echo "Fetching data for $name..."
+    curl -s "$url" | jq . > "$outfile" && \
+    echo "Saved data to $outfile ✅" || \
+    echo "Failed to fetch $name"
+}
+
+# Launch fetches in background
+for p in "${POKEMONS[@]}"; do
+    fetch_pokemon "$p" &
+done
+
+# Wait for all background jobs to complete
+wait
+
+echo "All fetches complete."
