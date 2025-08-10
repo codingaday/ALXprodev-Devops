@@ -1,5 +1,5 @@
 #!/bin/bash
-# summaryData-0x03
+
 # Summarizes Pokémon height and weight data from JSON files into a CSV and calculates averages.
 
 POKEMON_DIR="pokemon_data"

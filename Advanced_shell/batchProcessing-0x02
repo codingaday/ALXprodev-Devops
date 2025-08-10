@@ -1,32 +1,48 @@
 #!/bin/bash
 
-# Directory to store all Pokémon JSON files
+# Fetch multiple Pokémon details with retry logic and error handling.
+
+POKEMON_LIST=("bulbasaur" "charmander" "charmeleon" "ivysaur" "venusaur")
 OUTPUT_DIR="pokemon_data"
+LOG_FILE="error_log.txt"
+
+# Ensure output directory exists
 mkdir -p "$OUTPUT_DIR"
+: > "$LOG_FILE" # clear previous logs
 
-# List of Pokémon to fetch
-POKEMONS=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
+fetch_pokemon() {
+    local name="$1"
+    local retries=3
+    local count=0
+    local success=false
 
-# Base API URL
-API_URL="https://pokeapi.co/api/v2/pokemon"
+    while [ $count -lt $retries ]; do
+        response=$(curl -s -w "%{http_code}" -o "$OUTPUT_DIR/${name}.json" "https://pokeapi.co/api/v2/pokemon/${name}")
+        http_code="${response:(-3)}" # last 3 chars are HTTP code
 
-for pokemon in "${POKEMONS[@]}"; do
-    echo "Fetching data for $pokemon..."
-    
-    # Make the API request and check HTTP status
-    HTTP_CODE=$(curl -s "$API_URL/$pokemon" -w "%{http_code}" -o temp.json)
-    
-    if [[ $HTTP_CODE == 2* ]]; then
-        # Save pretty-printed JSON
-        jq . temp.json > "$OUTPUT_DIR/${pokemon}.json"
-        echo "Saved data to $OUTPUT_DIR/${pokemon}.json ✅"
-    else
-        echo "❌ Failed to fetch data for $pokemon (HTTP $HTTP_CODE)"
+        if [ "$http_code" -eq 200 ]; then
+            echo "[OK] $name fetched successfully."
+            success=true
+            break
+        else
+            echo "[WARN] Failed to fetch $name (HTTP $http_code). Retrying..."
+            sleep 2
+        fi
+        ((count++))
+    done
+
+    if [ "$success" = false ]; then
+        echo "[ERROR] $name could not be fetched after $retries attempts." | tee -a "$LOG_FILE"
+        rm -f "$OUTPUT_DIR/${name}.json" # remove partial/invalid file
     fi
+}
 
-    # Delay to avoid hitting API rate limits
-    sleep 2
+# Process each Pokémon in the list
+for pokemon in "${POKEMON_LIST[@]}"; do
+    fetch_pokemon "$pokemon"
 done
 
-# Clean up temporary file
-rm -f temp.json
+echo "Processing complete."
+if [ -s "$LOG_FILE" ]; then
+    echo "Some errors occurred. Check $LOG_FILE for details."
+fi
