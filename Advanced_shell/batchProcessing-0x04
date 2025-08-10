@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# Fetch Pokémon data in parallel with proper process management
+# Parallel Pokémon data fetching with process management including 'kill' command usage
 
 POKEMONS=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 OUTPUT_DIR="pokemon_data"
 mkdir -p "$OUTPUT_DIR"
 
+# Function to fetch pokemon data
 fetch_pokemon() {
     local name=$1
     local url="https://pokeapi.co/api/v2/pokemon/${name}"
@@ -17,12 +18,24 @@ fetch_pokemon() {
     echo "Failed to fetch $name"
 }
 
-# Launch fetches in background
+# Array to hold background process IDs
+pids=()
+
 for p in "${POKEMONS[@]}"; do
     fetch_pokemon "$p" &
+    pids+=($!)
 done
 
-# Wait for all background jobs to complete
+# Example: If you want to kill all running fetches after 10 seconds (just demonstration)
+# (Uncomment the lines below to enable kill after timeout)
+
+# sleep 10
+# echo "Timeout reached. Killing all background fetches..."
+# for pid in "${pids[@]}"; do
+#     kill "$pid" 2>/dev/null && echo "Killed process $pid"
+# done
+
+# Wait for all fetches to complete normally
 wait
 
 echo "All fetches complete."
