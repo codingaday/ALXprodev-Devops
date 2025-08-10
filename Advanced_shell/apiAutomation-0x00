@@ -1,0 +1,31 @@
+#!/bin/bash
+
+API_URL="https://pokeapi.co/api/v2/pokemon/pikachu"
+DATA_FILE="data.json"
+ERROR_FILE="errors.txt"
+TEMP_FILE="temp.json"
+
+# Make API request
+HTTP_CODE=$(curl -s "$API_URL" -w "%{http_code}" -o "$TEMP_FILE")
+
+if [[ $HTTP_CODE == 2* ]]; then
+    # Always save raw JSON first
+    cp "$TEMP_FILE" "$DATA_FILE"
+
+    # If jq exists, pretty-print
+    if command -v jq &>/dev/null; then
+        jq . "$TEMP_FILE" > "$DATA_FILE"
+        echo "✅ Data saved to $DATA_FILE"
+        echo "Sample output (first 50 lines):"
+        jq . < "$DATA_FILE" | head -n 50
+    else
+        echo "⚠ jq not found — saved raw JSON to $DATA_FILE"
+        echo "Install jq for formatted output."
+    fi
+
+    rm "$TEMP_FILE"
+else
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Request failed with HTTP $HTTP_CODE" >> "$ERROR_FILE"
+    rm "$TEMP_FILE"
+    echo "❌ Error logged to $ERROR_FILE"
+fi
