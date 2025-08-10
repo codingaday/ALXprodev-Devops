@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Input JSON file
 DATA_FILE="data.json"
 
 # Check if file exists
@@ -9,15 +8,15 @@ if [[ ! -f "$DATA_FILE" ]]; then
     exit 1
 fi
 
-# Extract fields using jq
-NAME=$(jq -r '.name' "$DATA_FILE" | sed 's/.*/\u&/')   # Capitalize first letter
-HEIGHT=$(jq -r '.height' "$DATA_FILE")
-WEIGHT=$(jq -r '.weight' "$DATA_FILE")
-TYPE=$(jq -r '.types[0].type.name' "$DATA_FILE" | sed 's/.*/\u&/')
+# Extract values
+name=$(jq -r '.name' "$DATA_FILE" | sed 's/.*/\u&/')
+height=$(jq -r '.height' "$DATA_FILE")
+weight=$(jq -r '.weight' "$DATA_FILE")
+type=$(jq -r '.types[0].type.name' "$DATA_FILE" | sed 's/.*/\u&/')
 
-# Convert height (decimetres → metres) and weight (hectograms → kg)
-HEIGHT_M=$(awk "BEGIN { printf \"%.1f\", $HEIGHT / 10 }")
-WEIGHT_KG=$(awk "BEGIN { printf \"%.0f\", $WEIGHT / 10 }")
+# Convert to meters and kg
+formatted_height=$(awk "BEGIN { printf \"%.1f\", $height / 10 }")
+formatted_weight=$(awk "BEGIN { printf \"%.0f\", $weight / 10 }")
 
-# Print formatted sentence
-echo "$NAME is of type $TYPE, weighs ${WEIGHT_KG}kg, and is ${HEIGHT_M}m tall."
+# Required output format
+echo "$name is of type $type, weighs ${formatted_weight}kg, and is ${formatted_height}m tall."
