@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# Parallel Pokémon data fetching with process management including 'kill' command usage
+# Parallel Pokémon fetching using background jobs, actively demonstrating 'jobs' and 'kill'
 
 POKEMONS=("bulbasaur" "ivysaur" "venusaur" "charmander" "charmeleon")
 OUTPUT_DIR="pokemon_data"
 mkdir -p "$OUTPUT_DIR"
 
-# Function to fetch pokemon data
 fetch_pokemon() {
     local name=$1
     local url="https://pokeapi.co/api/v2/pokemon/${name}"
@@ -18,24 +17,24 @@ fetch_pokemon() {
     echo "Failed to fetch $name"
 }
 
-# Array to hold background process IDs
-pids=()
-
+# Start background jobs
 for p in "${POKEMONS[@]}"; do
     fetch_pokemon "$p" &
-    pids+=($!)
 done
 
-# Example: If you want to kill all running fetches after 10 seconds (just demonstration)
-# (Uncomment the lines below to enable kill after timeout)
+# Show current background jobs
+echo "Current background jobs:"
+jobs
 
-# sleep 10
-# echo "Timeout reached. Killing all background fetches..."
-# for pid in "${pids[@]}"; do
-#     kill "$pid" 2>/dev/null && echo "Killed process $pid"
-# done
+# Demonstrate active kill usage:
+# We will kill any background job that is still running after 5 seconds
 
-# Wait for all fetches to complete normally
+sleep 5
+
+echo "Killing any still-running background jobs..."
+kill $(jobs -p) 2>/dev/null && echo "Killed background jobs." || echo "No jobs to kill."
+
+# Wait for all jobs to finish or be killed
 wait
 
-echo "All fetches complete."
+echo "All fetches complete or killed."
