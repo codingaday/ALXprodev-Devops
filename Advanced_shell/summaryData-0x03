@@ -1,0 +1,43 @@
+#!/bin/bash
+# summaryData-0x03
+# Summarizes Pokémon height and weight data from JSON files into a CSV and calculates averages.
+
+POKEMON_DIR="pokemon_data"
+REPORT_FILE="pokemon_report.csv"
+
+# Ensure pokemon_data directory exists
+if [ ! -d "$POKEMON_DIR" ]; then
+    echo "Error: Directory '$POKEMON_DIR' not found."
+    exit 1
+fi
+
+# CSV header
+echo "Name,Height (m),Weight (kg)" > "$REPORT_FILE"
+
+# Loop through each JSON file in the directory
+for file in "$POKEMON_DIR"/*.json; do
+    name=$(jq -r '.name' "$file" | sed 's/.*/\u&/') # Capitalize first letter
+    height=$(jq '.height' "$file")
+    weight=$(jq '.weight' "$file")
+
+    # Convert height (decimeters to meters) and weight (hectograms to kilograms)
+    height_m=$(awk -v h="$height" 'BEGIN { printf "%.1f", h / 10 }')
+    weight_kg=$(awk -v w="$weight" 'BEGIN { printf "%.1f", w / 10 }')
+
+    echo "$name,$height_m,$weight_kg" >> "$REPORT_FILE"
+done
+
+# Display CSV report location
+echo "CSV Report generated at: $REPORT_FILE"
+echo
+cat "$REPORT_FILE"
+echo
+
+# Calculate averages using awk (skip the header)
+awk -F, 'NR>1 { height_sum += $2; weight_sum += $3; count++ }
+    END {
+        if (count > 0) {
+            printf "\nAverage Height: %.2f m\n", height_sum / count
+            printf "Average Weight: %.2f kg\n", weight_sum / count
+        }
+    }' "$REPORT_FILE"
